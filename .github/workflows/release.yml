@@ -2,11 +2,42 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
+    paths:
+      - 'imp-rec/Info.plist'
 
 jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      should_release: ${{ steps.check.outputs.should_release }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version from Info.plist
+        id: version
+        run: |
+          VERSION=$(grep -A1 CFBundleShortVersionString imp-rec/Info.plist | tail -1 | sed 's/.*<string>\(.*\)<\/string>/\1/')
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Version: ${VERSION}"
+
+      - name: Check if release exists
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.version.outputs.version }}" &>/dev/null; then
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            echo "Release v${{ steps.version.outputs.version }} already exists, skipping"
+          else
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+            echo "Will create release v${{ steps.version.outputs.version }}"
+          fi
+
   build-macos-dmg:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
     runs-on: macos-latest
     environment: release-macOS
 
@@ -100,20 +131,27 @@ jobs:
         run: security delete-keychain $RUNNER_TEMP/app-signing.keychain-db
 
   release:
-    needs: build-macos-dmg
+    needs: [check-version, build-macos-dmg]
     runs-on: ubuntu-latest
 
     permissions:
       contents: write
 
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: Release ${{ github.ref_name }}
-          generate_release_notes: true
-          files: artifacts/macos-dmg/ImpRec-macos.dmg
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="v${{ needs.check-version.outputs.version }}"
+          git tag "${VERSION}"
+          git push origin "${VERSION}"
+          gh release create "${VERSION}" \
+            --title "Release ${VERSION}" \
+            --generate-notes \
+            artifacts/macos-dmg/ImpRec-macos.dmg
