@@ -28,11 +28,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         SCContentSharingPicker.shared.remove(self)
     }
 
+    private let iconConfig = NSImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem.button {
             let icon = NSImage(
-                systemSymbolName: "record.circle", accessibilityDescription: "ImpRec")
+                systemSymbolName: "record.circle", accessibilityDescription: "ImpRec")?
+                .withSymbolConfiguration(iconConfig)
             icon?.isTemplate = true
             button.image = icon
             button.target = self
@@ -81,7 +84,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func updateIcon(recording: Bool) {
         let symbolName = recording ? "stop.fill" : "record.circle"
-        let icon = NSImage(systemSymbolName: symbolName, accessibilityDescription: "ImpRec")
+        let icon = NSImage(systemSymbolName: symbolName, accessibilityDescription: "ImpRec")?
+            .withSymbolConfiguration(iconConfig)
         icon?.isTemplate = true
         statusItem.button?.image = icon
     }
