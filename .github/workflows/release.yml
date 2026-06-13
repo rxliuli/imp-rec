@@ -130,7 +130,7 @@ jobs:
 
       - uses: actions/download-artifact@v5
         with:
-          path: artifacts
+          name: macos-dmg
 
       - name: Create GitHub Release
         env:
@@ -142,4 +142,4 @@ jobs:
           gh release create "${VERSION}" \
             --title "Release ${VERSION}" \
             --generate-notes \
-            artifacts/macos-dmg/ImpRec-macos.dmg
+            ImpRec-macos.dmg
