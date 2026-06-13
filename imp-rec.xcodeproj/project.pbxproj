@@ -1,0 +1,247 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		08FB77B100000001FE841550 /* ImpRecApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08FB77A100000001FE841550 /* ImpRecApp.swift */; };
+		08FB77B100000002FE841550 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08FB77A100000002FE841550 /* AppDelegate.swift */; };
+		08FB77B100000003FE841550 /* ScreenRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08FB77A100000003FE841550 /* ScreenRecorder.swift */; };
+		08FB77B100000004FE841550 /* RecordingPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08FB77A100000004FE841550 /* RecordingPopoverView.swift */; };
+		08FB77B100000005FE841550 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 08FB77A100000007FE841550 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		08FB77A100000001FE841550 /* ImpRecApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImpRecApp.swift; sourceTree = "<group>"; };
+		08FB77A100000002FE841550 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		08FB77A100000003FE841550 /* ScreenRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenRecorder.swift; sourceTree = "<group>"; };
+		08FB77A100000004FE841550 /* RecordingPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingPopoverView.swift; sourceTree = "<group>"; };
+		08FB77A100000005FE841550 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		08FB77A100000006FE841550 /* imp-rec.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "imp-rec.entitlements"; sourceTree = "<group>"; };
+		08FB77A100000007FE841550 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		08FB77A100000008FE841550 /* imp-rec.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "imp-rec.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		08FB77C100000002FE841550 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		08FB779300000001FE841550 = {
+			isa = PBXGroup;
+			children = (
+				08FB779300000002FE841550 /* imp-rec */,
+				08FB779300000003FE841550 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		08FB779300000002FE841550 /* imp-rec */ = {
+			isa = PBXGroup;
+			children = (
+				08FB77A100000001FE841550 /* ImpRecApp.swift */,
+				08FB77A100000002FE841550 /* AppDelegate.swift */,
+				08FB77A100000003FE841550 /* ScreenRecorder.swift */,
+				08FB77A100000004FE841550 /* RecordingPopoverView.swift */,
+				08FB77A100000007FE841550 /* Assets.xcassets */,
+				08FB77A100000005FE841550 /* Info.plist */,
+				08FB77A100000006FE841550 /* imp-rec.entitlements */,
+			);
+			path = "imp-rec";
+			sourceTree = "<group>";
+		};
+		08FB779300000003FE841550 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				08FB77A100000008FE841550 /* imp-rec.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		08FB77F100000001FE841550 /* imp-rec */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 08FB77E100000002FE841550 /* Build configuration list for PBXNativeTarget "imp-rec" */;
+			buildPhases = (
+				08FB77C100000001FE841550 /* Sources */,
+				08FB77C100000002FE841550 /* Frameworks */,
+				08FB77C100000003FE841550 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "imp-rec";
+			productName = "imp-rec";
+			productReference = 08FB77A100000008FE841550 /* imp-rec.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		08FB77F200000001FE841550 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1540;
+				LastUpgradeCheck = 1540;
+			};
+			buildConfigurationList = 08FB77E100000001FE841550 /* Build configuration list for PBXProject "imp-rec" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 08FB779300000001FE841550;
+			productRefGroup = 08FB779300000003FE841550 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				08FB77F100000001FE841550 /* imp-rec */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		08FB77C100000003FE841550 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				08FB77B100000005FE841550 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		08FB77C100000001FE841550 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				08FB77B100000001FE841550 /* ImpRecApp.swift in Sources */,
+				08FB77B100000002FE841550 /* AppDelegate.swift in Sources */,
+				08FB77B100000003FE841550 /* ScreenRecorder.swift in Sources */,
+				08FB77B100000004FE841550 /* RecordingPopoverView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		08FB77D100000001FE841550 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		08FB77D100000002FE841550 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		08FB77D100000003FE841550 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "imp-rec/imp-rec.entitlements";
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "imp-rec/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.imp-rec";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		08FB77D100000004FE841550 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "imp-rec/imp-rec.entitlements";
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "imp-rec/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.imp-rec";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		08FB77E100000001FE841550 /* Build configuration list for PBXProject "imp-rec" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				08FB77D100000001FE841550 /* Debug */,
+				08FB77D100000002FE841550 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		08FB77E100000002FE841550 /* Build configuration list for PBXNativeTarget "imp-rec" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				08FB77D100000003FE841550 /* Debug */,
+				08FB77D100000004FE841550 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 08FB77F200000001FE841550 /* Project object */;
+}
