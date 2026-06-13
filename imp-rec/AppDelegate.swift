@@ -21,6 +21,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         false
     }
 
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !recorder.isRecording {
+            presentPicker()
+        }
+        return false
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         if recorder.isRecording {
             Task { _ = await recorder.stopRecording() }
