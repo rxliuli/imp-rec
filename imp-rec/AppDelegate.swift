@@ -80,11 +80,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func updateIcon(recording: Bool) {
-        let symbolName = recording ? "stop.circle.fill" : "record.circle"
+        let symbolName = recording ? "stop.fill" : "record.circle"
         let icon = NSImage(systemSymbolName: symbolName, accessibilityDescription: "imp-rec")
-        icon?.isTemplate = !recording
+        icon?.isTemplate = true
         statusItem.button?.image = icon
-        statusItem.button?.contentTintColor = recording ? .systemRed : nil
     }
 
     private func showMenu() {

@@ -6,6 +6,9 @@ DerivedData/
 xcuserdata/
 *.xcworkspace/xcshareddata/swiftpm/
 
+# Build artifacts
+*.dmg
+
 # macOS
 .DS_Store
 

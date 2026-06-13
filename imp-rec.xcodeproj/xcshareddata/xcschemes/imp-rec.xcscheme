@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "08FB77F100000001FE841550"
-               BuildableName = "imp-rec.app"
+               BuildableName = "ImpRec.app"
                BlueprintName = "imp-rec"
                ReferencedContainer = "container:imp-rec.xcodeproj">
             </BuildableReference>
@@ -44,7 +44,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "08FB77F100000001FE841550"
-            BuildableName = "imp-rec.app"
+            BuildableName = "ImpRec.app"
             BlueprintName = "imp-rec"
             ReferencedContainer = "container:imp-rec.xcodeproj">
          </BuildableReference>
@@ -61,7 +61,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "08FB77F100000001FE841550"
-            BuildableName = "imp-rec.app"
+            BuildableName = "ImpRec.app"
             BlueprintName = "imp-rec"
             ReferencedContainer = "container:imp-rec.xcodeproj">
          </BuildableReference>

@@ -22,7 +22,7 @@
 		08FB77A100000005FE841550 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		08FB77A100000006FE841550 /* imp-rec.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "imp-rec.entitlements"; sourceTree = "<group>"; };
 		08FB77A100000007FE841550 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		08FB77A100000008FE841550 /* imp-rec.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "imp-rec.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		08FB77A100000008FE841550 /* ImpRec.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ImpRec.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,7 +61,7 @@
 		08FB779300000003FE841550 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				08FB77A100000008FE841550 /* imp-rec.app */,
+				08FB77A100000008FE841550 /* ImpRec.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -83,7 +83,7 @@
 			);
 			name = "imp-rec";
 			productName = "imp-rec";
-			productReference = 08FB77A100000008FE841550 /* imp-rec.app */;
+			productReference = 08FB77A100000008FE841550 /* ImpRec.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -188,15 +188,18 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "imp-rec/imp-rec.entitlements";
-				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = N2X78TUUFG;
+				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = "imp-rec/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.example.imp-rec";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.rxliuli.imp-rec";
+				PRODUCT_NAME = ImpRec;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -206,16 +209,18 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "imp-rec/imp-rec.entitlements";
-				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = N2X78TUUFG;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = "imp-rec/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.example.imp-rec";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.rxliuli.imp-rec";
+				PRODUCT_NAME = ImpRec;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
