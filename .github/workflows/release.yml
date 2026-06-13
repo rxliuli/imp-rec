@@ -10,34 +10,22 @@ jobs:
   check-version:
     runs-on: ubuntu-latest
     outputs:
+      changed: ${{ steps.version.outputs.changed }}
       version: ${{ steps.version.outputs.version }}
-      should_release: ${{ steps.check.outputs.should_release }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Read version from Info.plist
+        with:
+          fetch-depth: 2
+      - name: Check version change
         id: version
-        run: |
-          VERSION=$(grep -A1 CFBundleShortVersionString imp-rec/Info.plist | tail -1 | sed 's/.*<string>\(.*\)<\/string>/\1/')
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "Version: ${VERSION}"
-
-      - name: Check if release exists
-        id: check
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if gh release view "v${{ steps.version.outputs.version }}" &>/dev/null; then
-            echo "should_release=false" >> "$GITHUB_OUTPUT"
-            echo "Release v${{ steps.version.outputs.version }} already exists, skipping"
-          else
-            echo "should_release=true" >> "$GITHUB_OUTPUT"
-            echo "Will create release v${{ steps.version.outputs.version }}"
-          fi
+        uses: rxliuli/version-check@v1
+        with:
+          file: imp-rec/Info.plist
+          query: CFBundleShortVersionString
 
   build-macos-dmg:
     needs: check-version
-    if: needs.check-version.outputs.should_release == 'true'
+    if: needs.check-version.outputs.changed == 'true'
     runs-on: macos-latest
     environment: release-macOS
 
