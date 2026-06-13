@@ -32,7 +32,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem.button {
             let icon = NSImage(
-                systemSymbolName: "record.circle", accessibilityDescription: "imp-rec")
+                systemSymbolName: "record.circle", accessibilityDescription: "ImpRec")
             icon?.isTemplate = true
             button.image = icon
             button.target = self
@@ -81,7 +81,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func updateIcon(recording: Bool) {
         let symbolName = recording ? "stop.fill" : "record.circle"
-        let icon = NSImage(systemSymbolName: symbolName, accessibilityDescription: "imp-rec")
+        let icon = NSImage(systemSymbolName: symbolName, accessibilityDescription: "ImpRec")
         icon?.isTemplate = true
         statusItem.button?.image = icon
     }
@@ -90,7 +90,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         menu.addItem(
             NSMenuItem(
-                title: "Quit imp-rec", action: #selector(NSApplication.terminate(_:)),
+                title: "Quit ImpRec", action: #selector(NSApplication.terminate(_:)),
                 keyEquivalent: "q"))
         statusItem.menu = menu
         statusItem.button?.performClick(nil)
@@ -116,7 +116,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "imp-rec"
+        window.title = "ImpRec"
         window.contentView = NSHostingView(rootView: editorView)
         window.delegate = closeDelegate
         window.center()
