@@ -19,10 +19,9 @@ A lightweight, open-source screen recorder for macOS. Menu bar only, zero config
 
 Grab the latest DMG from [Releases](https://github.com/user/imp-rec/releases).
 
-### Homebrew
+### Homebrew (coming soon)
 
 ```bash
-brew tap rxliuli/imp-rec
 brew install --cask imp-rec
 ```
 
