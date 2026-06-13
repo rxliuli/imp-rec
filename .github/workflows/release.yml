@@ -1,0 +1,119 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-macos-dmg:
+    runs-on: macos-latest
+    environment: release-macOS
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup certificates
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_DEVELOPERID_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_DEVELOPERID_PASSWORD }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        run: |
+          security create-keychain -p actions $RUNNER_TEMP/app-signing.keychain-db
+          security set-keychain-settings -lut 21600 $RUNNER_TEMP/app-signing.keychain-db
+          security unlock-keychain -p actions $RUNNER_TEMP/app-signing.keychain-db
+          security default-keychain -s $RUNNER_TEMP/app-signing.keychain-db
+
+          echo "$CERTIFICATE_BASE64" | base64 --decode > $RUNNER_TEMP/cert.p12
+          security import $RUNNER_TEMP/cert.p12 -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $RUNNER_TEMP/app-signing.keychain-db
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k actions $RUNNER_TEMP/app-signing.keychain-db
+
+          security find-identity -v -p codesigning $RUNNER_TEMP/app-signing.keychain-db
+
+          mkdir -p ~/private_keys
+          echo "$APPLE_API_KEY" | base64 --decode > ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
+
+      - name: Build release
+        env:
+          SIGNING_IDENTITY: ${{ vars.SIGNING_IDENTITY_DMG }}
+        run: |
+          xcodebuild -project imp-rec.xcodeproj \
+            -scheme imp-rec \
+            -configuration Release \
+            -derivedDataPath build/DerivedData \
+            CONFIGURATION_BUILD_DIR="$(pwd)/build/Release" \
+            CODE_SIGN_IDENTITY="${SIGNING_IDENTITY}" \
+            DEVELOPMENT_TEAM=N2X78TUUFG \
+            build
+
+      - name: Sign app
+        env:
+          SIGNING_IDENTITY: ${{ vars.SIGNING_IDENTITY_DMG }}
+        run: |
+          codesign --force --sign "${SIGNING_IDENTITY}" \
+            --options runtime \
+            --timestamp \
+            --entitlements imp-rec/imp-rec.entitlements \
+            "build/Release/ImpRec.app"
+
+          codesign --verify --deep --strict "build/Release/ImpRec.app"
+
+      - name: Create DMG
+        env:
+          SIGNING_IDENTITY: ${{ vars.SIGNING_IDENTITY_DMG }}
+        run: |
+          brew install create-dmg
+          create-dmg \
+            --volname "ImpRec" \
+            --window-pos 200 120 \
+            --window-size 660 400 \
+            --icon-size 100 \
+            --icon "ImpRec.app" 180 170 \
+            --hide-extension "ImpRec.app" \
+            --app-drop-link 480 170 \
+            --codesign "${SIGNING_IDENTITY}" \
+            "ImpRec-macos.dmg" \
+            "build/Release/ImpRec.app"
+
+      - name: Notarize DMG
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          xcrun notarytool submit "ImpRec-macos.dmg" \
+            --key ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8 \
+            --key-id "${APPLE_API_KEY_ID}" \
+            --issuer "${APPLE_API_ISSUER}" \
+            --wait
+
+          xcrun stapler staple "ImpRec-macos.dmg"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: ImpRec-macos.dmg
+
+      - name: Cleanup keychain
+        if: always()
+        run: security delete-keychain $RUNNER_TEMP/app-signing.keychain-db
+
+  release:
+    needs: build-macos-dmg
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          files: artifacts/macos-dmg/ImpRec-macos.dmg
