@@ -17,7 +17,7 @@ A lightweight, open-source screen recorder for macOS. Menu bar only, zero config
 
 ### Download
 
-Grab the latest DMG from [Releases](https://github.com/user/imp-rec/releases).
+Grab the latest DMG from [Releases](https://github.com/rxliuli/imp-rec/releases).
 
 ### Homebrew (coming soon)
 
@@ -29,12 +29,12 @@ brew install --cask imp-rec
 
 - macOS 14.0 (Sonoma) or later
 - Screen recording permission (prompted on first launch)
-- [ffmpeg](https://formulae.brew.sh/formula/ffmpeg) for x264 compression (falls back to AVFoundation if not installed)
+- [ffmpeg](https://formulae.brew.sh/formula/ffmpeg) (optional) — enables better x264 compression; works without it using built-in AVFoundation
 
 ## Build from source
 
 ```bash
-git clone https://github.com/user/imp-rec.git
+git clone https://github.com/rxliuli/imp-rec.git
 cd imp-rec
 xcodebuild -project imp-rec.xcodeproj -scheme imp-rec -configuration Release build
 ```
