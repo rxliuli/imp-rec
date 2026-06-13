@@ -2,7 +2,7 @@
 
 A lightweight, open-source screen recorder for macOS. Menu bar only, zero config, good compression.
 
-![ImpRec icon](icon_source.png)
+<img src="icon_source.png" height="128" />
 
 ## Features
 
