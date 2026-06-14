@@ -6,5 +6,14 @@
 	<string>app-store-connect</string>
 	<key>teamID</key>
 	<string>N2X78TUUFG</string>
+	<key>signingStyle</key>
+	<string>manual</string>
+	<key>signingCertificate</key>
+	<string>3rd Party Mac Developer Application</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>com.rxliuli.imp-rec</key>
+		<string>imp-rec macOS</string>
+	</dict>
 </dict>
 </plist>
