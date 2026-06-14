@@ -102,6 +102,10 @@ final class EditorState: ObservableObject {
         isPlaying = true
     }
 
+    func resumeAfterSeek() {
+        if wasPlayingBeforeDrag { player?.play(); isPlaying = true }
+    }
+
     func cleanup() {
         alive = false
         if let o = timeObserver { player?.removeTimeObserver(o); timeObserver = nil }
@@ -306,7 +310,8 @@ struct EditorView: View {
                     currentTime: state.currentTime,
                     onDragStart: { state.beginDrag() },
                     onSeek: { state.seek(to: $0) },
-                    onDragEnd: { state.endDrag() }
+                    onDragEnd: { state.endDrag() },
+                    onSeekEnd: { state.resumeAfterSeek() }
                 )
 
                 HStack(spacing: 6) {
@@ -416,6 +421,7 @@ struct TrimBar: View {
     var onDragStart: () -> Void = {}
     let onSeek: (Double) -> Void
     var onDragEnd: () -> Void = {}
+    var onSeekEnd: () -> Void = {}
 
     private let trackHeight: CGFloat = 4
     private let handleH: CGFloat = 14
@@ -469,6 +475,8 @@ struct TrimBar: View {
                          cornerRadius: 1.5),
                     with: .color(.yellow))
             }
+            .contentShape(Rectangle())
+            .gesture(seekDrag(width: w))
             .overlay {
                 HStack(spacing: 0) {
                     Color.clear
@@ -495,6 +503,20 @@ struct TrimBar: View {
     private func xFor(_ time: Double, in width: CGFloat) -> CGFloat {
         guard duration > 0 else { return 0 }
         return CGFloat(time / duration) * width
+    }
+
+    private func seekDrag(width: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .named("trimBar"))
+            .onChanged { value in
+                if !isDragging { isDragging = true; onDragStart() }
+                guard duration > 0 else { return }
+                let t = max(trimStart, min(trimEnd, Double(value.location.x / width) * duration))
+                onSeek(t)
+            }
+            .onEnded { _ in
+                isDragging = false
+                onSeekEnd()
+            }
     }
 
     private enum Side { case start, end }
