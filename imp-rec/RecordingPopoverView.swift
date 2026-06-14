@@ -1,5 +1,6 @@
 import AVFoundation
 import SwiftUI
+import VideoToolbox
 
 // MARK: - Editor State
 
@@ -131,7 +132,9 @@ final class EditorState: ObservableObject {
                     ffmpeg, input: videoURL, output: outputURL,
                     start: trimStart, end: trimEnd)
             } else {
-                try await avExport(input: videoURL, output: outputURL)
+                try await videoToolboxExport(
+                    input: videoURL, output: outputURL,
+                    start: trimStart, end: trimEnd)
             }
 
             try? FileManager.default.removeItem(at: videoURL)
@@ -179,6 +182,83 @@ final class EditorState: ObservableObject {
                             domain: "imp-rec", code: Int(p.terminationStatus)))
                     }
                 } catch { cont.resume(throwing: error) }
+            }
+        }
+    }
+
+    private func videoToolboxExport(
+        input: URL, output: URL, start: Double, end: Double
+    ) async throws {
+        let asset = AVURLAsset(url: input)
+        let videoTrack = try await asset.loadTracks(withMediaType: .video).first
+        guard let videoTrack else {
+            throw NSError(domain: "imp-rec", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "No video track found"])
+        }
+
+        let naturalSize = try await videoTrack.load(.naturalSize)
+        let transform = try await videoTrack.load(.preferredTransform)
+        let transformedSize = naturalSize.applying(transform)
+        let width = Int(abs(transformedSize.width))
+        let height = Int(abs(transformedSize.height))
+
+        let timeRange = CMTimeRange(
+            start: CMTime(seconds: start, preferredTimescale: 600),
+            end: CMTime(seconds: end, preferredTimescale: 600))
+
+        let pixelCount = width * height
+        let targetBitRate = Int(Double(pixelCount) * 0.1 * 30)
+
+        let compressionProperties: [String: Any] = [
+            AVVideoAverageBitRateKey: targetBitRate,
+            AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel,
+            AVVideoH264EntropyModeKey: AVVideoH264EntropyModeCABAC,
+            AVVideoMaxKeyFrameIntervalKey: 60,
+            AVVideoQualityKey: 0.5,
+        ]
+
+        let writerSettings: [String: Any] = [
+            AVVideoCodecKey: AVVideoCodecType.h264,
+            AVVideoWidthKey: width,
+            AVVideoHeightKey: height,
+            AVVideoCompressionPropertiesKey: compressionProperties,
+        ]
+
+        let readerSettings: [String: Any] = [
+            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+        ]
+
+        let writer = try AVAssetWriter(url: output, fileType: .mp4)
+        let writerInput = AVAssetWriterInput(mediaType: .video, outputSettings: writerSettings)
+        writerInput.expectsMediaDataInRealTime = false
+        writerInput.transform = transform
+        writer.add(writerInput)
+
+        let exportQueue = DispatchQueue(label: "imp-rec.export")
+
+        let reader = try AVAssetReader(asset: asset)
+        reader.timeRange = timeRange
+        let readerOutput = AVAssetReaderTrackOutput(track: videoTrack, outputSettings: readerSettings)
+        reader.add(readerOutput)
+
+        reader.startReading()
+        writer.startWriting()
+        writer.startSession(atSourceTime: timeRange.start)
+
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+            writerInput.requestMediaDataWhenReady(on: exportQueue) {
+                while writerInput.isReadyForMoreMediaData {
+                    if let sample = readerOutput.copyNextSampleBuffer() {
+                        writerInput.append(sample)
+                    } else {
+                        writerInput.markAsFinished()
+                        writer.finishWriting {
+                            if writer.status == .completed { cont.resume() }
+                            else { cont.resume(throwing: writer.error ?? NSError(domain: "imp-rec", code: -1)) }
+                        }
+                        return
+                    }
+                }
             }
         }
     }
