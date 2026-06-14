@@ -39,6 +39,8 @@ jobs:
         env:
           CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_DEVELOPERID_BASE64 }}
           CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_DEVELOPERID_PASSWORD }}
+          DIST_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_DISTRIBUTION_BASE64 }}
+          DIST_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_DISTRIBUTION_PASSWORD }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
         run: |
@@ -49,6 +51,10 @@ jobs:
 
           echo "$CERTIFICATE_BASE64" | base64 --decode > $RUNNER_TEMP/cert.p12
           security import $RUNNER_TEMP/cert.p12 -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $RUNNER_TEMP/app-signing.keychain-db
+
+          echo "$DIST_CERTIFICATE_BASE64" | base64 --decode > $RUNNER_TEMP/dist-cert.p12
+          security import $RUNNER_TEMP/dist-cert.p12 -P "$DIST_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $RUNNER_TEMP/app-signing.keychain-db
+
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k actions $RUNNER_TEMP/app-signing.keychain-db
 
           security find-identity -v -p codesigning $RUNNER_TEMP/app-signing.keychain-db
