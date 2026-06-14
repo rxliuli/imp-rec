@@ -291,9 +291,10 @@ struct EditorView: View {
         VStack(spacing: 0) {
             if let player = state.player {
                 PlayerView(player: player)
-                    .background(Color.black)
+                    .background(Color(nsColor: .windowBackgroundColor))
             } else {
-                Color.black.overlay { ProgressView() }
+                Color(nsColor: .windowBackgroundColor)
+                    .overlay { ProgressView() }
             }
 
             // Controls
@@ -328,45 +329,27 @@ struct EditorView: View {
                         .font(.caption2.monospacedDigit())
                         .foregroundStyle(.secondary)
                     }
+
+                    if state.isExporting {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+
+                    Button("Save") {
+                        Task {
+                            if let url = await state.exportVideo() {
+                                NSWorkspace.shared.activateFileViewerSelecting([url])
+                                onDone()
+                            }
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(state.isExporting || state.duration == 0)
                 }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(Color(nsColor: .windowBackgroundColor))
-
-            Divider()
-
-            // Bottom bar
-            HStack {
-                if let size = fileSize(state.videoURL) {
-                    Text(size)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                if state.isExporting {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text("Exporting…")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Button("Save") {
-                    Task {
-                        if let url = await state.exportVideo() {
-                            NSWorkspace.shared.activateFileViewerSelecting([url])
-                            onDone()
-                        }
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(state.isExporting || state.duration == 0)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
         }
         .frame(minWidth: 480, minHeight: 360)
         .focusable()
@@ -387,12 +370,6 @@ struct EditorView: View {
         }
     }
 
-    private func fileSize(_ url: URL) -> String? {
-        guard let a = try? FileManager.default.attributesOfItem(atPath: url.path),
-            let s = a[.size] as? Int64
-        else { return nil }
-        return ByteCountFormatter.string(fromByteCount: s, countStyle: .file)
-    }
 }
 
 // MARK: - Player View
@@ -409,7 +386,7 @@ class PlayerNSView: NSView {
     init(player: AVPlayer) {
         playerLayer = AVPlayerLayer(player: player)
         playerLayer.videoGravity = .resizeAspect
-        playerLayer.backgroundColor = NSColor.black.cgColor
+        playerLayer.backgroundColor = nil
         super.init(frame: .zero)
         wantsLayer = true
         layer?.addSublayer(playerLayer)

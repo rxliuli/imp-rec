@@ -90,7 +90,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func updateIcon(recording: Bool) {
-        let symbolName = recording ? "stop.fill" : "record.circle"
+        let symbolName = recording ? "stop.circle" : "record.circle"
         let icon = NSImage(systemSymbolName: symbolName, accessibilityDescription: "ImpRec")?
             .withSymbolConfiguration(iconConfig)
         icon?.isTemplate = true
@@ -121,8 +121,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self?.closeEditor()
         }
 
+        // Read video dimensions for window sizing
+        let asset = AVURLAsset(url: videoURL)
+        var windowWidth: CGFloat = 660
+        var windowHeight: CGFloat = 500
+        let controlsHeight: CGFloat = 80
+
+        if let track = asset.tracks(withMediaType: .video).first {
+            let size = track.naturalSize.applying(track.preferredTransform)
+            let videoW = abs(size.width)
+            let videoH = abs(size.height)
+
+            let maxW: CGFloat = 900
+            let maxH: CGFloat = 700
+            let scale = min(maxW / videoW, maxH / videoH, 1.0)
+
+            windowWidth = videoW * scale
+            windowHeight = videoH * scale + controlsHeight
+        }
+
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 660, height: 500),
+            contentRect: NSRect(x: 0, y: 0, width: windowWidth, height: windowHeight),
             styleMask: [.titled, .closable, .resizable, .miniaturizable],
             backing: .buffered,
             defer: false
