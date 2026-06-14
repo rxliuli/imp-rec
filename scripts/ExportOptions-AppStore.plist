@@ -8,6 +8,8 @@
 	<string>N2X78TUUFG</string>
 	<key>signingStyle</key>
 	<string>manual</string>
+	<key>signingCertificate</key>
+	<string>Apple Distribution</string>
 	<key>provisioningProfiles</key>
 	<dict>
 		<key>com.rxliuli.imp-rec</key>
