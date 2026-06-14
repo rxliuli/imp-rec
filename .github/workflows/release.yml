@@ -138,7 +138,7 @@ jobs:
             "$APP_PATH/Contents/embedded.provisionprofile"
 
           codesign --force --sign "Apple Distribution: KAI WANG (N2X78TUUFG)" \
-            --entitlements imp-rec/imp-rec.entitlements \
+            --entitlements imp-rec/imp-rec-appstore.entitlements \
             --timestamp \
             "$APP_PATH"
 
