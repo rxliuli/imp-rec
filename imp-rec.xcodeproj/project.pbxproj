@@ -22,7 +22,7 @@
 		08FB77A100000005FE841550 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		08FB77A100000006FE841550 /* imp-rec.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "imp-rec.entitlements"; sourceTree = "<group>"; };
 		08FB77A100000007FE841550 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		08FB77A100000008FE841550 /* ImpRec.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ImpRec.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		08FB77A100000008FE841550 /* ImpRec.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ImpRec.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -195,6 +195,7 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = "imp-rec/Info.plist";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.graphics-design";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -216,6 +217,7 @@
 				DEVELOPMENT_TEAM = N2X78TUUFG;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = "imp-rec/Info.plist";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.graphics-design";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
