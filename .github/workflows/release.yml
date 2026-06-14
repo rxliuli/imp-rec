@@ -94,6 +94,7 @@ jobs:
       - name: Create DMG
         env:
           SIGNING_IDENTITY: ${{ vars.SIGNING_IDENTITY_DMG }}
+          HOMEBREW_NO_REQUIRE_TAP_TRUST: 1
         run: |
           brew install create-dmg
           create-dmg \
