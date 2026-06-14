@@ -117,6 +117,28 @@ jobs:
           name: macos-dmg
           path: ImpRec-macos.dmg
 
+      - name: Archive for App Store
+        run: |
+          xcodebuild archive \
+            -project imp-rec.xcodeproj \
+            -scheme imp-rec \
+            -archivePath build/ImpRec.xcarchive \
+            DEVELOPMENT_TEAM=N2X78TUUFG
+
+      - name: Upload to App Store Connect
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath build/ImpRec.xcarchive \
+            -exportPath build/AppStore \
+            -exportOptionsPlist scripts/ExportOptions-AppStore.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8 \
+            -authenticationKeyID "${APPLE_API_KEY_ID}" \
+            -authenticationKeyIssuerID "${APPLE_API_ISSUER}"
+
       - name: Cleanup keychain
         if: always()
         run: security delete-keychain $RUNNER_TEMP/app-signing.keychain-db
