@@ -101,11 +101,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         menu.addItem(
             NSMenuItem(
+                title: "About ImpRec", action: #selector(openAbout),
+                keyEquivalent: ""))
+        menu.addItem(.separator())
+        menu.addItem(
+            NSMenuItem(
                 title: "Quit ImpRec", action: #selector(NSApplication.terminate(_:)),
                 keyEquivalent: "q"))
         statusItem.menu = menu
         statusItem.button?.performClick(nil)
         statusItem.menu = nil
+    }
+
+    @objc private func openAbout() {
+        NSWorkspace.shared.open(URL(string: "https://github.com/rxliuli/imp-rec")!)
     }
 
     private func showEditor(with videoURL: URL) {
