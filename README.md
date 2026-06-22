@@ -17,7 +17,7 @@ A lightweight, open-source screen recorder for macOS. Menu bar only, zero config
 
 ### App Store
 
-[![Download on the Mac App Store](https://developer.apple.com/assets/elements/badges/download-on-the-mac-app-store.svg)](https://apps.apple.com/app/imprec/id6780140406)
+[Download on the Mac App Store](https://apps.apple.com/app/imprec/id6780140406)
 
 ### Download
 
