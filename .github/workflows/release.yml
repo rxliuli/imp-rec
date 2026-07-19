@@ -66,6 +66,11 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/imp-rec-macOS.provisionprofile
 
+      # App Store Connect requires CFBundleVersion to be higher than any
+      # previously uploaded build; the run number is guaranteed to increase.
+      - name: Stamp build number
+        run: /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" imp-rec/Info.plist
+
       - name: Build release
         env:
           SIGNING_IDENTITY: ${{ vars.SIGNING_IDENTITY_DMG }}
