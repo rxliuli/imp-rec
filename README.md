@@ -19,6 +19,12 @@ A lightweight, open-source screen recorder for macOS. Menu bar only, zero config
 
 [Download on the Mac App Store](https://apps.apple.com/app/imprec/id6780140406)
 
+### Homebrew
+
+```bash
+brew install --cask rxliuli/tap/imp-rec
+```
+
 ### Download
 
 Grab the latest DMG from [Releases](https://github.com/rxliuli/imp-rec/releases).
