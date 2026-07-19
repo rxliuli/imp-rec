@@ -99,8 +99,8 @@ jobs:
       - name: Create DMG
         env:
           SIGNING_IDENTITY: ${{ vars.SIGNING_IDENTITY_DMG }}
-          HOMEBREW_NO_REQUIRE_TAP_TRUST: 1
         run: |
+          brew untap aws/tap 2>/dev/null || true
           brew install create-dmg
           create-dmg \
             --volname "ImpRec" \
@@ -128,7 +128,7 @@ jobs:
           xcrun stapler staple "ImpRec-macos.dmg"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: macos-dmg
           path: ImpRec-macos.dmg
@@ -170,7 +170,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v8
         with:
           name: macos-dmg
 
