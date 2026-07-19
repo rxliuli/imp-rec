@@ -66,6 +66,11 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/imp-rec-macOS.provisionprofile
 
+      # App Store Connect requires CFBundleVersion to be higher than any
+      # previously uploaded build; the run number is guaranteed to increase.
+      - name: Stamp build number
+        run: /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" imp-rec/Info.plist
+
       - name: Build release
         env:
           SIGNING_IDENTITY: ${{ vars.SIGNING_IDENTITY_DMG }}
@@ -180,3 +185,22 @@ jobs:
             --title "Release ${VERSION}" \
             --generate-notes \
             ImpRec-macos.dmg
+
+      - name: Update Homebrew tap
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          if [[ -z "${TAP_TOKEN}" ]]; then
+            echo "TAP_GITHUB_TOKEN not set, skipping tap update"
+            exit 0
+          fi
+          VERSION="${{ needs.check-version.outputs.version }}"
+          SHA256=$(sha256sum ImpRec-macos.dmg | cut -d' ' -f1)
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/rxliuli/homebrew-tap.git" tap
+          cd tap
+          sed -i -E "s/version \"[^\"]+\"/version \"${VERSION}\"/" Casks/imp-rec.rb
+          sed -i -E "s/sha256 \"[^\"]+\"/sha256 \"${SHA256}\"/" Casks/imp-rec.rb
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: bump imp-rec to v${VERSION}"
+          git push
