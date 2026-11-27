@@ -29,11 +29,21 @@ jobs:
   build-macos-dmg:
     needs: check-version
     if: needs.check-version.outputs.changed == 'true'
-    runs-on: macos-latest
+    # imp-rec.xcodeproj uses Xcode's JSON project format (project.xcproj, introduced in
+    # Xcode 27.2), which requires Xcode 27+. Switch back to macos-latest once it ships Xcode 27+.
+    runs-on: xcode-27
     environment: release-macOS
 
     steps:
       - uses: actions/checkout@v6
+
+      # Ensure Xcode 27.2 is active on the xcode-27 runner while 27.1 is still its default.
+      - name: Select Xcode 27.2
+        run: |
+          if [ -d /Applications/Xcode_27.2.app ]; then
+            sudo xcode-select -s /Applications/Xcode_27.2.app/Contents/Developer
+          fi
+          xcodebuild -version
 
       - name: Setup certificates
         env:
@@ -102,17 +112,43 @@ jobs:
         run: |
           brew untap aws/tap 2>/dev/null || true
           brew install create-dmg
-          create-dmg \
-            --volname "ImpRec" \
-            --window-pos 200 120 \
-            --window-size 660 400 \
-            --icon-size 100 \
-            --icon "ImpRec.app" 180 170 \
-            --hide-extension "ImpRec.app" \
-            --app-drop-link 480 170 \
-            --codesign "${SIGNING_IDENTITY}" \
-            "ImpRec-macos.dmg" \
-            "build/Release/ImpRec.app"
+          CREATE_DMG_ARGS=(
+            --volname "ImpRec"
+            --window-pos 200 120
+            --window-size 660 400
+            --icon-size 100
+            --icon "ImpRec.app" 180 170
+            --hide-extension "ImpRec.app"
+            --app-drop-link 480 170
+            --codesign "${SIGNING_IDENTITY}"
+          )
+          DMG_BUILT=false
+          if create-dmg "${CREATE_DMG_ARGS[@]}" "ImpRec-macos.dmg" "build/Release/ImpRec.app"; then
+            DMG_BUILT=true
+          else
+            # Headless xcode-27 / macOS 27 runners fail in Finder AppleScript (-1728)
+            # and occasionally hit transient hdiutil create errors.
+            echo "::warning::create-dmg failed; retrying with --skip-jenkins"
+            for attempt in 1 2 3; do
+              rm -f "ImpRec-macos.dmg" rw.*.ImpRec-macos.dmg
+              sleep 2
+              if create-dmg "${CREATE_DMG_ARGS[@]}" --skip-jenkins "ImpRec-macos.dmg" "build/Release/ImpRec.app"; then
+                DMG_BUILT=true
+                break
+              fi
+              echo "::warning::create-dmg --skip-jenkins attempt ${attempt}/3 failed"
+            done
+          fi
+          if [ "$DMG_BUILT" != true ]; then
+            rm -f "ImpRec-macos.dmg" rw.*.ImpRec-macos.dmg
+            echo "::warning::create-dmg failed after retries; falling back to direct hdiutil create"
+            STAGING="$(mktemp -d)"
+            ditto "build/Release/ImpRec.app" "$STAGING/ImpRec.app"
+            ln -s /Applications "$STAGING/Applications"
+            hdiutil create -volname "ImpRec" -srcfolder "$STAGING" -ov -format UDZO "ImpRec-macos.dmg"
+            rm -rf "$STAGING"
+            codesign --force --sign "${SIGNING_IDENTITY}" --timestamp "ImpRec-macos.dmg"
+          fi
 
       - name: Notarize DMG
         env:
