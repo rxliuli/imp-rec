@@ -1,47 +1,104 @@
 name: Release
 
+# The single source of truth for the version is MARKETING_VERSION in
+# imp-rec.xcodeproj/project.xcproj (imp-rec/Info.plist uses $(MARKETING_VERSION) /
+# $(CURRENT_PROJECT_VERSION)).
+#
+# Note: v0.0.26 was uploaded to App Store Connect with build 28 (from the old
+# github.run_number scheme). Because apple-release derives CFBundleVersion as
+# x*10000 + y*100 + z, bump the next version to at least 0.0.29 (or 0.1.0 -> 100)
+# so build numbers stay strictly increasing.
 on:
   push:
     branches: [main]
     paths:
-      - 'imp-rec/Info.plist'
+      - 'imp-rec.xcodeproj/project.xcproj'
   workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Actually upload to ASC / create GitHub Release / update Homebrew cask (unchecked = rehearsal only)'
+        type: boolean
+        default: false
+      build-number:
+        description: 'Override CFBundleVersion (empty = derive x*10000 + y*100 + z from version)'
+        type: string
+        default: ''
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
 
 jobs:
-  check-version:
+  version:
+    name: Resolve version
     runs-on: ubuntu-latest
     outputs:
-      changed: ${{ steps.forced.outputs.changed || steps.version.outputs.changed }}
-      version: ${{ steps.version.outputs.version }}
+      version: ${{ steps.read.outputs.version }}
+      build_number: ${{ steps.read.outputs.build_number }}
+      run: ${{ steps.read.outputs.run }}
+      publish: ${{ steps.read.outputs.publish }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 2
-      - name: Check version change
-        id: version
+
+      - id: check
         uses: rxliuli/version-check@v1
         with:
-          file: imp-rec/Info.plist
-          query: CFBundleShortVersionString
-      - id: forced
-        if: github.event_name == 'workflow_dispatch'
-        run: echo "changed=true" >> "$GITHUB_OUTPUT"
+          file: imp-rec.xcodeproj/project.xcproj
 
-  build-macos-dmg:
-    needs: check-version
-    if: needs.check-version.outputs.changed == 'true'
-    # imp-rec.xcodeproj uses Xcode's JSON project format (project.xcproj, introduced in
-    # Xcode 27.2), which requires Xcode 27+. Switch back to macos-latest once it ships Xcode 27+.
+      - id: read
+        name: Resolve build number and publish mode
+        run: |
+          VERSION="${{ steps.check.outputs.version }}"
+          if [[ -z "$VERSION" ]]; then
+            echo "::error::Could not read MARKETING_VERSION from imp-rec.xcodeproj/project.xcproj"
+            exit 1
+          fi
+
+          RUN=false
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" || "${{ steps.check.outputs.changed }}" == "true" ]]; then
+            RUN=true
+          fi
+
+          PUBLISH=false
+          if [[ "$RUN" == "true" ]] && { [[ "${{ github.event_name }}" == "push" ]] || [[ "${{ inputs.publish }}" == "true" ]]; }; then
+            PUBLISH=true
+          fi
+
+          BUILD_NUMBER="${{ inputs.build-number }}"
+          if [[ -z "$BUILD_NUMBER" ]]; then
+            IFS='.' read -r MAJOR MINOR PATCH <<< "${VERSION}"
+            BUILD_NUMBER=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+          fi
+          if ! [[ "$BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::error::Derived build number '${BUILD_NUMBER}' is invalid (expected x.y.z version, got '${VERSION}')"
+            exit 1
+          fi
+
+          {
+            echo "version=${VERSION}"
+            echo "build_number=${BUILD_NUMBER}"
+            echo "run=${RUN}"
+            echo "publish=${PUBLISH}"
+          } >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}  build=${BUILD_NUMBER}  run=${RUN}  publish=${PUBLISH}"
+
+  appstore:
+    name: macOS → App Store Connect
+    needs: version
+    if: needs.version.outputs.run == 'true'
+    # imp-rec.xcodeproj uses Xcode's JSON project format (project.xcproj), which requires
+    # Xcode 27+. Switch back to macos-latest once it ships Xcode 27+.
     runs-on: xcode-27
+    timeout-minutes: 40
     environment: release-macOS
-
     steps:
       - uses: actions/checkout@v6
 
-      # Ensure Xcode 27.2 is active on the xcode-27 runner while 27.1 is still its default.
       - name: Select Xcode 27.2
         run: |
           if [ -d /Applications/Xcode_27.2.app ]; then
@@ -49,173 +106,90 @@ jobs:
           fi
           xcodebuild -version
 
-      - name: Setup certificates
-        env:
-          CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_DEVELOPERID_BASE64 }}
-          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_DEVELOPERID_PASSWORD }}
-          DIST_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_DISTRIBUTION_BASE64 }}
-          DIST_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_DISTRIBUTION_PASSWORD }}
-          PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
-          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-        run: |
-          security create-keychain -p actions $RUNNER_TEMP/app-signing.keychain-db
-          security set-keychain-settings -lut 21600 $RUNNER_TEMP/app-signing.keychain-db
-          security unlock-keychain -p actions $RUNNER_TEMP/app-signing.keychain-db
-          EXISTING_KEYCHAINS=()
-          while IFS= read -r line; do
-            EXISTING_KEYCHAINS+=("$line")
-          done < <(security list-keychains -d user | sed -e 's/^[[:space:]]*"//' -e 's/"[[:space:]]*$//')
-          security list-keychains -d user -s "$RUNNER_TEMP/app-signing.keychain-db" "${EXISTING_KEYCHAINS[@]}"
-          security default-keychain -s $RUNNER_TEMP/app-signing.keychain-db
-
-          echo "$CERTIFICATE_BASE64" | base64 --decode > $RUNNER_TEMP/cert.p12
-          security import $RUNNER_TEMP/cert.p12 -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $RUNNER_TEMP/app-signing.keychain-db
-
-          echo "$DIST_CERTIFICATE_BASE64" | base64 --decode > $RUNNER_TEMP/dist-cert.p12
-          security import $RUNNER_TEMP/dist-cert.p12 -P "$DIST_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $RUNNER_TEMP/app-signing.keychain-db
-
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k actions $RUNNER_TEMP/app-signing.keychain-db
-
-          security find-identity -v $RUNNER_TEMP/app-signing.keychain-db
-
-          mkdir -p ~/private_keys
-          echo "$APPLE_API_KEY" | base64 --decode > ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
-
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/imp-rec-macOS.provisionprofile
-
-      # App Store Connect requires CFBundleVersion to be higher than any
-      # previously uploaded build; the run number is guaranteed to increase.
-      - name: Stamp build number
-        run: /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" imp-rec/Info.plist
-
-      - name: Build release
-        env:
-          SIGNING_IDENTITY: ${{ vars.SIGNING_IDENTITY_DMG }}
-        run: |
-          xcodebuild -project imp-rec.xcodeproj \
-            -scheme imp-rec \
-            -configuration Release \
-            -derivedDataPath build/DerivedData \
-            CONFIGURATION_BUILD_DIR="$(pwd)/build/Release" \
-            CODE_SIGN_IDENTITY="${SIGNING_IDENTITY}" \
-            DEVELOPMENT_TEAM=N2X78TUUFG \
-            build
-
-      - name: Sign app
-        env:
-          SIGNING_IDENTITY: ${{ vars.SIGNING_IDENTITY_DMG }}
-        run: |
-          codesign --force --sign "${SIGNING_IDENTITY}" \
-            --options runtime \
-            --timestamp \
-            --entitlements imp-rec/imp-rec.entitlements \
-            "build/Release/ImpRec.app"
-
-          codesign --verify --deep --strict "build/Release/ImpRec.app"
-
-      - name: Create DMG
-        env:
-          SIGNING_IDENTITY: ${{ vars.SIGNING_IDENTITY_DMG }}
-        run: |
-          brew untap aws/tap 2>/dev/null || true
-          brew install create-dmg
-          CREATE_DMG_ARGS=(
-            --volname "ImpRec"
-            --window-pos 200 120
-            --window-size 660 400
-            --icon-size 100
-            --icon "ImpRec.app" 180 170
-            --hide-extension "ImpRec.app"
-            --app-drop-link 480 170
-            --codesign "${SIGNING_IDENTITY}"
-          )
-          DMG_BUILT=false
-          if create-dmg "${CREATE_DMG_ARGS[@]}" "ImpRec-macos.dmg" "build/Release/ImpRec.app"; then
-            DMG_BUILT=true
-          else
-            # Headless xcode-27 / macOS 27 runners fail in Finder AppleScript (-1728)
-            # and occasionally hit transient hdiutil create errors.
-            echo "::warning::create-dmg failed; retrying with --skip-jenkins"
-            for attempt in 1 2 3; do
-              rm -f "ImpRec-macos.dmg" rw.*.ImpRec-macos.dmg
-              sleep 2
-              if create-dmg "${CREATE_DMG_ARGS[@]}" --skip-jenkins "ImpRec-macos.dmg" "build/Release/ImpRec.app"; then
-                DMG_BUILT=true
-                break
-              fi
-              echo "::warning::create-dmg --skip-jenkins attempt ${attempt}/3 failed"
-            done
-          fi
-          if [ "$DMG_BUILT" != true ]; then
-            rm -f "ImpRec-macos.dmg" rw.*.ImpRec-macos.dmg
-            echo "::warning::create-dmg failed after retries; falling back to direct hdiutil create"
-            STAGING="$(mktemp -d)"
-            ditto "build/Release/ImpRec.app" "$STAGING/ImpRec.app"
-            ln -s /Applications "$STAGING/Applications"
-            hdiutil create -volname "ImpRec" -srcfolder "$STAGING" -ov -format UDZO "ImpRec-macos.dmg"
-            rm -rf "$STAGING"
-            codesign --force --sign "${SIGNING_IDENTITY}" --timestamp "ImpRec-macos.dmg"
-          fi
-
-      - name: Notarize DMG
-        env:
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-        run: |
-          xcrun notarytool submit "ImpRec-macos.dmg" \
-            --key ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8 \
-            --key-id "${APPLE_API_KEY_ID}" \
-            --issuer "${APPLE_API_ISSUER}" \
-            --wait
-
-          xcrun stapler staple "ImpRec-macos.dmg"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
+      - uses: rxliuli/apple-release/asc@v1
         with:
-          name: macos-dmg
-          path: ImpRec-macos.dmg
+          platform: macos
+          scheme: imp-rec
+          project: imp-rec.xcodeproj
+          version: ${{ needs.version.outputs.version }}
+          build-number: ${{ needs.version.outputs.build_number }}
+          team-id: N2X78TUUFG
+          release: ${{ needs.version.outputs.publish }}
+          certificate-base64: ${{ secrets.APPLE_CERTIFICATE_DEVELOPERID_BASE64 }}
+          certificate-password: ${{ secrets.APPLE_CERTIFICATE_DEVELOPERID_PASSWORD }}
+          api-key: ${{ secrets.APPLE_API_KEY }}
+          api-key-id: ${{ secrets.APPLE_API_KEY_ID }}
+          api-issuer: ${{ secrets.APPLE_API_ISSUER }}
 
-      - name: Upload to App Store Connect
-        env:
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-        run: |
-          APP_PATH="build/Release/ImpRec.app"
-
-          cp ~/Library/MobileDevice/Provisioning\ Profiles/imp-rec-macOS.provisionprofile \
-            "$APP_PATH/Contents/embedded.provisionprofile"
-
-          codesign --force --sign "Apple Distribution: KAI WANG (N2X78TUUFG)" \
-            --entitlements imp-rec/imp-rec-appstore.entitlements \
-            --timestamp \
-            "$APP_PATH"
-
-          productbuild --component "$APP_PATH" /Applications \
-            --sign "3rd Party Mac Developer Installer: KAI WANG (N2X78TUUFG)" \
-            --keychain "$RUNNER_TEMP/app-signing.keychain-db" \
-            build/ImpRec.pkg
-
-          xcrun altool --upload-app -f build/ImpRec.pkg -t macos \
-            --apiKey "${APPLE_API_KEY_ID}" \
-            --apiIssuer "${APPLE_API_ISSUER}"
-
-      - name: Cleanup keychain
-        if: always()
-        run: security delete-keychain $RUNNER_TEMP/app-signing.keychain-db
-
-  release:
-    needs: [check-version, build-macos-dmg]
+  appstore-submit:
+    name: macOS → App Store review
+    needs: [version, appstore]
+    if: needs.version.outputs.run == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 75
+    environment: release-macOS
+    steps:
+      - uses: rxliuli/apple-release/submit@v1
+        with:
+          platform: macos
+          bundle-id: com.rxliuli.imp-rec
+          version: ${{ needs.version.outputs.version }}
+          build-number: ${{ needs.version.outputs.build_number }}
+          release: ${{ needs.version.outputs.publish }}
+          api-key: ${{ secrets.APPLE_API_KEY }}
+          api-key-id: ${{ secrets.APPLE_API_KEY_ID }}
+          api-issuer: ${{ secrets.APPLE_API_ISSUER }}
 
-    permissions:
-      contents: write
-
+  macos-dmg:
+    name: macOS → notarized DMG
+    needs: version
+    if: needs.version.outputs.run == 'true'
+    runs-on: xcode-27
+    timeout-minutes: 60
+    environment: release-macOS
     steps:
       - uses: actions/checkout@v6
 
+      - name: Select Xcode 27.2
+        run: |
+          if [ -d /Applications/Xcode_27.2.app ]; then
+            sudo xcode-select -s /Applications/Xcode_27.2.app/Contents/Developer
+          fi
+          xcodebuild -version
+
+      - uses: rxliuli/apple-release/dmg@v1
+        id: dmg
+        with:
+          project: imp-rec.xcodeproj
+          scheme: imp-rec
+          version: ${{ needs.version.outputs.version }}
+          build-number: ${{ needs.version.outputs.build_number }}
+          signing-identity: ${{ vars.SIGNING_IDENTITY_DMG }}
+          certificate-base64: ${{ secrets.APPLE_CERTIFICATE_DEVELOPERID_BASE64 }}
+          certificate-password: ${{ secrets.APPLE_CERTIFICATE_DEVELOPERID_PASSWORD }}
+          api-key: ${{ secrets.APPLE_API_KEY }}
+          api-key-id: ${{ secrets.APPLE_API_KEY_ID }}
+          api-issuer: ${{ secrets.APPLE_API_ISSUER }}
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: macos-dmg
+          path: ${{ steps.dmg.outputs.dmg-path }}
+          if-no-files-found: error
+
+  release:
+    name: GitHub Release + Homebrew cask
+    needs: [version, appstore, macos-dmg]
+    if: >-
+      always()
+      && needs.version.outputs.publish == 'true'
+      && needs.appstore.result == 'success'
+      && needs.macos-dmg.result == 'success'
+    runs-on: ubuntu-latest
+    environment: release-macOS
+    env:
+      TAP_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+    steps:
       - uses: actions/download-artifact@v8
         with:
           name: macos-dmg
@@ -223,30 +197,25 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
         run: |
-          VERSION="v${{ needs.check-version.outputs.version }}"
-          git tag "${VERSION}"
-          git push origin "${VERSION}"
-          gh release create "${VERSION}" \
-            --title "Release ${VERSION}" \
-            --generate-notes \
-            ImpRec-macos.dmg
+          TAG="v${VERSION}"
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "${TAG} already exists, replacing attachment"
+            gh release upload "$TAG" ImpRec-macos.dmg --clobber --repo "${{ github.repository }}"
+          else
+            gh release create "$TAG" \
+              --title "Release ${TAG}" \
+              --generate-notes \
+              --repo "${{ github.repository }}" \
+              ImpRec-macos.dmg
+          fi
 
       - name: Update Homebrew tap
-        env:
-          TAP_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
-        run: |
-          if [[ -z "${TAP_TOKEN}" ]]; then
-            echo "TAP_GITHUB_TOKEN not set, skipping tap update"
-            exit 0
-          fi
-          VERSION="${{ needs.check-version.outputs.version }}"
-          SHA256=$(sha256sum ImpRec-macos.dmg | cut -d' ' -f1)
-          git clone "https://x-access-token:${TAP_TOKEN}@github.com/rxliuli/homebrew-tap.git" tap
-          cd tap
-          sed -i -E "s/version \"[^\"]+\"/version \"${VERSION}\"/" Casks/imp-rec.rb
-          sed -i -E "s/sha256 \"[^\"]+\"/sha256 \"${SHA256}\"/" Casks/imp-rec.rb
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -am "chore: bump imp-rec to v${VERSION}"
-          git push
+        if: env.TAP_TOKEN != ''
+        uses: rxliuli/apple-release/tap-update@v1
+        with:
+          cask: imp-rec
+          version: ${{ needs.version.outputs.version }}
+          artifact: ImpRec-macos.dmg
+          token: ${{ env.TAP_TOKEN }}

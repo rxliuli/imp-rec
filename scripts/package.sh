@@ -3,7 +3,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-VERSION=$(plutil -extract CFBundleShortVersionString raw imp-rec/Info.plist)
+VERSION=$(xcodebuild -project imp-rec.xcodeproj -target imp-rec -showBuildSettings | awk -F' = ' '/MARKETING_VERSION = / { print $2; exit }')
 APP_NAME="ImpRec"
 DMG_NAME="ImpRec-${VERSION}.dmg"
 BUILD_DIR="build/Release"
