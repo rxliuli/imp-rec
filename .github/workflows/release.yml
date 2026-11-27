@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'imp-rec/Info.plist'
+  workflow_dispatch:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -13,7 +14,7 @@ jobs:
   check-version:
     runs-on: ubuntu-latest
     outputs:
-      changed: ${{ steps.version.outputs.changed }}
+      changed: ${{ steps.forced.outputs.changed || steps.version.outputs.changed }}
       version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v6
@@ -25,6 +26,9 @@ jobs:
         with:
           file: imp-rec/Info.plist
           query: CFBundleShortVersionString
+      - id: forced
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "changed=true" >> "$GITHUB_OUTPUT"
 
   build-macos-dmg:
     needs: check-version
@@ -58,6 +62,11 @@ jobs:
           security create-keychain -p actions $RUNNER_TEMP/app-signing.keychain-db
           security set-keychain-settings -lut 21600 $RUNNER_TEMP/app-signing.keychain-db
           security unlock-keychain -p actions $RUNNER_TEMP/app-signing.keychain-db
+          EXISTING_KEYCHAINS=()
+          while IFS= read -r line; do
+            EXISTING_KEYCHAINS+=("$line")
+          done < <(security list-keychains -d user | sed -e 's/^[[:space:]]*"//' -e 's/"[[:space:]]*$//')
+          security list-keychains -d user -s "$RUNNER_TEMP/app-signing.keychain-db" "${EXISTING_KEYCHAINS[@]}"
           security default-keychain -s $RUNNER_TEMP/app-signing.keychain-db
 
           echo "$CERTIFICATE_BASE64" | base64 --decode > $RUNNER_TEMP/cert.p12
@@ -68,7 +77,7 @@ jobs:
 
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k actions $RUNNER_TEMP/app-signing.keychain-db
 
-          security find-identity -v -p codesigning $RUNNER_TEMP/app-signing.keychain-db
+          security find-identity -v $RUNNER_TEMP/app-signing.keychain-db
 
           mkdir -p ~/private_keys
           echo "$APPLE_API_KEY" | base64 --decode > ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
@@ -186,6 +195,7 @@ jobs:
 
           productbuild --component "$APP_PATH" /Applications \
             --sign "3rd Party Mac Developer Installer: KAI WANG (N2X78TUUFG)" \
+            --keychain "$RUNNER_TEMP/app-signing.keychain-db" \
             build/ImpRec.pkg
 
           xcrun altool --upload-app -f build/ImpRec.pkg -t macos \
